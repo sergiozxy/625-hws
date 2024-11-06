@@ -1,0 +1,23 @@
+Package: nadarayaWatson
+Title: Rcpp Based Nadaraya-Watson Kernel Regression
+Version: 0.0.0.9000
+Authors@R: 
+    person("Xuyuan", "Zhang", email = "zxuyuan@umich.edu", role = c("aut", "cre"))
+Description: This package uses Rcpp to implement the Nadaraya-Watson kernel regression. The Nadaraya-Watson kernel regression is a non-parametric regression method that estimates the conditional expectation of a random variable given another random variable.
+License: GPL (>= 3)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.1
+LinkingTo: 
+    Rcpp
+Imports: 
+    Rcpp
+Suggests: 
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+Depends: 
+    R (>= 2.10)
+LazyData: true
+VignetteBuilder: knitr

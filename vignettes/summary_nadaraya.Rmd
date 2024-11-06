@@ -1,0 +1,119 @@
+---
+title: "summary_nadaraya"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{summary_nadaraya}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(nadarayaWatson)
+library(np)
+```
+
+## Introduction
+
+This package provides an implementation of the Nadaraya-Watson kernel regression estimator using Rcpp. The Nadaraya-Watson estimator is a nonparametric regression estimator that estimates the conditional expectation of a response variable given a predictor variable. The estimator is based on a weighted average of the response variable values, where the weights are determined by a kernel function. The package also provides functions for estimating confidence intervals for the regression function using a bootstrap resampling approach.
+
+## mathematical expression and how to implement the model
+
+For a given point \( x \), the Nadaraya-Watson estimator of \( Y \) is defined as:
+
+\[
+\hat{m}(x) = \frac{\sum_{i=1}^n K\left(\frac{x - X_i}{h}\right) Y_i}{\sum_{i=1}^n K\left(\frac{x - X_i}{h}\right)}
+\]
+
+where:
+
+- \( K \) is the **kernel function**, a smooth, symmetric function (such as a Gaussian, Epanechnikov, or uniform kernel) that assigns weights to observations based on their distance from \( x \).
+- \( h \) is the **bandwidth** parameter, controlling the width of the kernel. A small \( h \) focuses more on points closer to \( x \), leading to a more localized (and possibly noisier) estimate, while a larger \( h \) smooths over a broader range of points.
+
+I use Cpp in implementation of the model and the Cpp considers the R interface and export the results to R
+
+## Results
+
+Here is an example that you can consider to compare the model and the expected outcome of the np package. We can see that the results are pretty much related to each other and the differences are not that much.
+
+```{r, warning=FALSE}
+# Generate example data
+set.seed(42)
+x <- sort(seq(0, 10, length.out = 100))
+y <- sin(x) + rnorm(100, sd = 0.2)
+x_eval <- seq(0, 10, length.out = 100)
+bandwidth <- 0.5
+
+# Predict with bootstrapping for confidence intervals
+results <- nadaraya_watson(x, y, x_eval, bandwidth, n_boot = 500, conf_level = 0.95)
+
+# Extract the results
+y_pred <- results$y_pred
+lower <- results$lower
+upper <- results$upper
+
+# Plot the results with confidence intervals
+plot(x, y, main = "Nonparametric Regression with Confidence Intervals", xlab = "x", ylab = "y")
+lines(x_eval, y_pred, col = "blue", lwd = 2, lty = 1)
+lines(x_eval, lower, col = "blue", lty = 2)
+lines(x_eval, upper, col = "blue", lty = 2)
+legend("topright", legend = c("Estimate", "Confidence Interval"), col = c("blue", "blue"), lty = c(1, 2), lwd = 2)
+```
+
+## Some Differences between this package and the np package
+
+This package uses some kind of different optimization comparing with the np package since the np package uses other tricks in modeling and this package only follows from the textbook. Moreover, implementing a large pacakge is beyond the scope of this homework, so I just leave this to future works.
+
+We can choose to generate the code for comparision:
+
+```{r}
+# Generate example data
+set.seed(42)
+x <- sort(runif(100, 0, 10))
+y <- sin(x) + rnorm(100, sd = 0.2)
+x_eval <- seq(0, 10, length.out = 100)
+bandwidth <- 0.5
+```
+
+Now we can consider the graph to compare the results of the Rcpp implementation with the np package:
+
+```{r, warning=FALSE}
+# Predict with Rcpp implementation 
+results <- nadaraya_watson(x, y, x_eval, bandwidth, n_boot = 500, conf_level = 0.95) 
+y_pred_cpp <- results$y_pred
+lower_cpp <- results$lower
+upper_cpp <- results$upper
+
+# Predict with the np package (R implementation)
+np_model <- npreg(bws = bandwidth, xdat = x, ydat = y, exdat = x_eval, 
+                  ckertype = "gaussian")
+y_pred_np <- predict(np_model)
+
+# Plot the results with confidence intervals
+plot(x, y, main = "Nonparametric Regression Comparison", xlab = "x", ylab = "y")
+lines(x_eval, y_pred_cpp, col = "blue", lwd = 2, lty = 1)
+lines(x_eval, lower_cpp, col = "blue", lty = 2)
+lines(x_eval, upper_cpp, col = "blue", lty = 2)
+lines(x_eval, y_pred_np, col = "red", lwd = 2, lty = 1)
+legend("topright", legend = c("Rcpp Estimate", "Rcpp Confidence Interval", "np Package Estimate"), 
+       col = c("blue", "blue", "red"), lty = c(1, 2, 1), lwd = c(2, 1, 2))
+```
+
+We can also plot the differences explcitly
+
+```{r}
+# Display a summary of the differences
+diff <- y_pred_cpp - y_pred_np
+summary(diff)
+
+# Optionally, plot the difference between the two estimates
+plot(x_eval, diff, type = "b", col = "purple", main = "Difference Between Rcpp and np Estimates",
+     xlab = "x_eval", ylab = "Difference (Rcpp - np)", pch = 19)
+abline(h = 0, col = "gray", lty = 2)
+```

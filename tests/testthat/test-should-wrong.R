@@ -29,3 +29,33 @@ test_that("nadaraya_watson returns expected error for incorrect argument types",
       regexp = "Expecting a single value: \\[extent=100\\]"
     )
   })
+
+
+test_that("nadaraya_watson throws error for invalid conf_level", {
+  # Case where conf_level is out of bounds (<= 0 or >= 1)
+  expect_error(
+    nadaraya_watson(nadaraya_data$x,
+                     nadaraya_data$y,
+                     nadaraya_data$x_eval,
+                     bandwidth = 0.5, n_boot = 100, conf_level = -0.1),
+    "Confidence level must be between 0 and 1."
+  )
+  expect_error(
+    nadaraya_watson(nadaraya_data$x,
+                    nadaraya_data$y,
+                    nadaraya_data$x_eval,
+                    bandwidth = 0.5, n_boot = 100, conf_level = 1.5),
+    "Confidence level must be between 0 and 1."
+  )
+})
+
+test_that("nadaraya_watson throws error when x_eval is empty", {
+  # Case where x_eval is empty
+  expect_error(
+    nadaraya_watson(nadaraya_data$x,
+                    nadaraya_data$y, numeric(0), bandwidth = 0.5, n_boot = 100, conf_level = 0.95),
+    "The evaluation points 'x_eval' cannot be empty."
+  )
+})
+
+

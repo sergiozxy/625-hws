@@ -37,3 +37,19 @@ test_that("nadaraya_watson returns similar output as R implementation", {
   # Check similarity
   expect_equal(results$y_pred, y_pred_np, tolerance = 1e-3)
 })
+
+
+test_that("nadaraya_watson returns only point estimates without bootstrapping", {
+  # Case where n_boot = 0, so only point estimates should be returned
+  results <- nadaraya_watson(
+    nadaraya_data$x,
+    nadaraya_data$y,
+    nadaraya_data$x_eval,
+    bandwidth,
+    n_boot = 0)
+
+  expect_type(results, "list")
+  expect_true("y_pred" %in% names(results))
+  expect_false("lower" %in% names(results))
+  expect_false("upper" %in% names(results))
+})

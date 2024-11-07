@@ -91,10 +91,20 @@ List nadaraya_watson(NumericVector x, NumericVector y, NumericVector x_eval, dou
        IntegerVector indices = sample(n, n, true);  // Sample with replacement
        NumericVector x_boot(n), y_boot(n);
 
+      /*
+       Rcpp::Rcout << "Bootstrap iteration " << b << ", indices: ";
+       for (int i = 0; i < n; i++) {
+         Rcpp::Rcout << indices[i] << " ";
+        if (indices[i] < 0 || indices[i] >= n) {
+          Rcpp::Rcout << "\nError: index " << indices[i] << " out of bounds!" << std::endl;
+          return List::create(Named("error") = "Out of bounds in indices");
+        }
+      }
+       */
        // Manually subset x and y using the sampled indices
        for (int i = 0; i < n; i++) {
-         x_boot[i] = x[indices[i]];
-         y_boot[i] = y[indices[i]];
+         x_boot[i] = x[indices[i] - 1];
+         y_boot[i] = y[indices[i] - 1];
        }
 
        // Calculate predictions for this bootstrap sample
@@ -127,6 +137,12 @@ List nadaraya_watson(NumericVector x, NumericVector y, NumericVector x_eval, dou
        lower_idx = std::max(0, std::min(n_boot - 1, lower_idx));
        upper_idx = std::max(0, std::min(n_boot - 1, upper_idx));
 
+      /* debug
+      if (lower_idx < 0 || lower_idx >= n_boot || upper_idx < 0 || upper_idx >= n_boot) {
+        Rcpp::Rcout << "Error: Index out of bounds in confidence interval calculation" << std::endl;
+        return List::create(Named("error") = "Out of bounds in confidence interval indices");
+      }
+      */
        lower[j] = boot_vals[lower_idx];
        upper[j] = boot_vals[upper_idx];
      }
